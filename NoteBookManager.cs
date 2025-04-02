@@ -14,9 +14,17 @@ public class NoteBookManager : MonoBehaviour
 
     private List<ClueData> collectedClues = new();
 
+    public List<ClueData> CollectedClues => collectedClues;
+
     private bool notebookOpen = false;
+    private ClueBoardManager clueBoardManager;
 
     public bool IsNotebookOpen => notebookOpen;
+
+    private void Awake()
+    {
+        clueBoardManager = FindFirstObjectByType<ClueBoardManager>();
+    }
 
     private void Update()
     {
@@ -26,8 +34,13 @@ public class NoteBookManager : MonoBehaviour
         }
     }
 
-    private void ToggleNoteBook()
+    public void ToggleNoteBook()
     {
+        if(clueBoardManager != null && clueBoardManager.IsBoardOpen)
+        {
+            clueBoardManager.ToggleBoard();
+        }
+
         notebookOpen = !notebookOpen;
         noteBookUI.SetActive(notebookOpen);
 
