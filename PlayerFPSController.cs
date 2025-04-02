@@ -1,8 +1,9 @@
-using PlayerInput;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(PlayerInput))]
 public class PlayerFPSController : MonoBehaviour
 {
     [SerializeField] float moveSpeed = 3f;
@@ -12,7 +13,11 @@ public class PlayerFPSController : MonoBehaviour
     [SerializeField] LayerMask interactableLayer;
 
     private CharacterController controller;
-    private PlayerInputActions inputActions;
+    private PlayerInput playerInput;
+    private InputAction moveAction;
+    private InputAction lookAction;
+    private InputAction interactAction;
+
     private Vector2 inputMove;
     private Vector2 inputLook;
 
@@ -21,30 +26,38 @@ public class PlayerFPSController : MonoBehaviour
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
-        inputActions = new PlayerInputActions();
+        playerInput = GetComponent<PlayerInput>();
+
+        moveAction = playerInput.actions["Move"];
+        lookAction = playerInput.actions["Look"];
+        interactAction = playerInput.actions["Interact"];
     }
 
     private void OnEnable()
     {
-        inputActions.Player.Enable();
+        moveAction.performed += ctx => inputMove = ctx.ReadValue<Vector2>();
+        moveAction.canceled += ctx => inputMove = Vector2.zero;
+
+        lookAction.performed += ctx => inputLook = ctx.ReadValue<Vector2>();
+        lookAction.canceled += ctx => inputLook = Vector2.zero;
+
+        interactAction.performed += _ => TryInteract();
     }
 
     private void OnDisable()
     {
-        inputActions.Player.Disable();
+        moveAction.performed -= ctx => inputMove = ctx.ReadValue<Vector2>();
+        moveAction.canceled -= ctx => inputMove = Vector2.zero;
+
+        lookAction.performed -= ctx => inputLook = ctx.ReadValue<Vector2>();
+        lookAction.canceled -= ctx => inputLook = Vector2.zero;
+
+        interactAction.performed -= _ => TryInteract();
     }
 
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-
-        inputActions.Player.Move.performed += ctx => inputMove = ctx.ReadValue<Vector2>();
-        inputActions.Player.Move.canceled += ctx => inputMove = Vector2.zero;
-
-        inputActions.Player.Look.performed += ctx => inputLook = ctx.ReadValue<Vector2>();
-        inputActions.Player.Look.canceled += ctx => inputLook = Vector2.zero;
-
-        inputActions.Player.Interact.performed += _ => TryInteract();
     }
 
     private void Update()
@@ -62,12 +75,12 @@ public class PlayerFPSController : MonoBehaviour
         controller.Move(move * moveSpeed * Time.deltaTime);
     }
 
-    void TryInteract()
+    public void TryInteract()
     {
         Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
-        if(Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
         {
-            if(hit.collider.TryGetComponent(out IInteractable interactable))
+            if (hit.collider.TryGetComponent(out IInteractable interactable))
             {
                 interactable.Interact();
             }
