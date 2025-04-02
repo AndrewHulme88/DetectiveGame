@@ -8,6 +8,8 @@ public class PlayerFPSController : MonoBehaviour
     [SerializeField] float moveSpeed = 3f;
     [SerializeField] Transform cameraTransform;
     [SerializeField] float mouseSensitivity = 2f;
+    [SerializeField] float interactRange = 2f;
+    [SerializeField] LayerMask interactableLayer;
 
     private CharacterController controller;
     private PlayerInputActions inputActions;
@@ -41,6 +43,8 @@ public class PlayerFPSController : MonoBehaviour
 
         inputActions.Player.Look.performed += ctx => inputLook = ctx.ReadValue<Vector2>();
         inputActions.Player.Look.canceled += ctx => inputLook = Vector2.zero;
+
+        inputActions.Player.Interact.performed += _ => TryInteract();
     }
 
     private void Update()
@@ -56,5 +60,17 @@ public class PlayerFPSController : MonoBehaviour
 
         Vector3 move = transform.right * inputMove.x + transform.forward * inputMove.y;
         controller.Move(move * moveSpeed * Time.deltaTime);
+    }
+
+    void TryInteract()
+    {
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+        if(Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
+        {
+            if(hit.collider.TryGetComponent(out IInteractable interactable))
+            {
+                interactable.Interact();
+            }
+        }
     }
 }
