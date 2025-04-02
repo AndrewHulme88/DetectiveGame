@@ -2,39 +2,52 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using TMPro;
+using UnityEngine.EventSystems;
 
 public class NoteBookManager : MonoBehaviour
 {
     [SerializeField] GameObject noteBookUI;
     [SerializeField] Transform clueListParent;
     [SerializeField] GameObject clueEntryPrefab;
+    [SerializeField] TextMeshProUGUI clueDescriptionText;
 
     private List<ClueData> collectedClues = new();
 
-    private bool noteBookOpen = false;
+    private bool notebookOpen = false;
+
+    public bool IsNotebookOpen => notebookOpen;
 
     private void Update()
     {
         if(Keyboard.current.tabKey.wasPressedThisFrame)
         {
-            //ToggleNoteBook();
+            ToggleNoteBook();
         }
     }
 
     private void ToggleNoteBook()
     {
-        noteBookOpen = !noteBookOpen;
-        noteBookUI.SetActive(noteBookOpen);
+        notebookOpen = !notebookOpen;
+        noteBookUI.SetActive(notebookOpen);
 
-        Cursor.lockState = noteBookOpen ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = noteBookOpen;
+        Cursor.lockState = notebookOpen ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = notebookOpen;
     }
 
     public void AddClue(ClueData clue)
     {
         collectedClues.Add(clue);
         GameObject entry = Instantiate(clueEntryPrefab, clueListParent);
-        entry.GetComponentInChildren<Text>().text = clue.clueName;
+        entry.GetComponentInChildren<TextMeshProUGUI>().text = clue.clueName;
+
+        Button button = entry.AddComponent<Button>();
+        button.onClick.AddListener(() => ShowClueDescription(clue));
+    }
+
+    private void ShowClueDescription(ClueData clue)
+    {
+        clueDescriptionText.text = clue.description;
     }
 }
 

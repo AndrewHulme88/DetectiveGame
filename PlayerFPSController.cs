@@ -62,6 +62,8 @@ public class PlayerFPSController : MonoBehaviour
 
     private void Update()
     {
+        if (NotebookManagerOpen()) return;
+
         float mouseX = inputLook.x * mouseSensitivity;
         float mouseY = inputLook.y * mouseSensitivity;
 
@@ -77,6 +79,8 @@ public class PlayerFPSController : MonoBehaviour
 
     public void TryInteract()
     {
+        if (NotebookManagerOpen()) return;
+
         Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
         {
@@ -85,5 +89,11 @@ public class PlayerFPSController : MonoBehaviour
                 interactable.Interact();
             }
         }
+    }
+
+    private bool NotebookManagerOpen()
+    {
+        NoteBookManager notebook = FindFirstObjectByType<NoteBookManager>();
+        return notebook != null && notebook.IsNotebookOpen;
     }
 }
