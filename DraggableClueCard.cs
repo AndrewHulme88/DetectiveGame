@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 
-public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     [SerializeField] TextMeshProUGUI clueNameText;
 
@@ -37,5 +37,10 @@ public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler,
     {
         canvasGroup.blocksRaycasts = true;
         transform.SetParent(originalParent);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        FindFirstObjectByType<ClueBoardManager>().HandleClueClicked(this);
     }
 }
