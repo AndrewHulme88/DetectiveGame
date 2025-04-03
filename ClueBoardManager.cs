@@ -16,6 +16,7 @@ public class ClueBoardManager : MonoBehaviour
     private bool boardOpen = false;
     private DraggableClueCard firstSelectedCard;
     private List<GameObject> activeLines = new();
+    private HashSet<ClueLink> existingLinks = new();
 
     public bool IsBoardOpen => boardOpen;
 
@@ -29,6 +30,16 @@ public class ClueBoardManager : MonoBehaviour
         if(Keyboard.current.mKey.wasPressedThisFrame)
         {
             ToggleBoard();
+        }
+
+        foreach(var link in existingLinks)
+        {
+            if (link.line == null) continue;
+
+            Vector2 start = GetAnchoredPosition(link.a.transform as RectTransform);
+            Vector2 end = GetAnchoredPosition(link.b.transform as RectTransform);
+
+            link.line.Points = new Vector2[] { start, end };
         }
     }
 
@@ -86,21 +97,105 @@ public class ClueBoardManager : MonoBehaviour
         }
     }
 
+    public void HandleClueRightClick(DraggableClueCard clicked)
+    {
+        ClueLink foundLink = null;
+
+        foreach (var link in existingLinks)
+        {
+            if (link.a == clicked || link.b == clicked)
+            {
+                foundLink = link;
+                break;
+            }
+        }
+
+        if (foundLink != null)
+        {
+            existingLinks.Remove(foundLink);
+
+            GameObject lineToRemove = null;
+
+            foreach (var lineObject in activeLines)
+            {
+                var line = lineObject.GetComponent<UILineRenderer>();
+
+                if (line.Points.Length < 2) continue;
+
+                Vector2 posA = GetAnchoredPosition(foundLink.a.GetComponent<RectTransform>());
+                Vector2 posB = GetAnchoredPosition(foundLink.b.GetComponent<RectTransform>());
+
+                if ((line.Points[0] == posA && line.Points[1] == posB) ||
+                    (line.Points[0] == posB && line.Points[1] == posA))
+                {
+                    lineToRemove = lineObject;
+                    break;
+                }
+            }
+
+            if(lineToRemove != null)
+            {
+                activeLines.Remove(lineToRemove);
+                Destroy(lineToRemove);
+            }
+
+            Debug.Log("Line removed.");
+        }
+    }
+
     void CreateLink(DraggableClueCard a, DraggableClueCard b)
     {
-        GameObject lineObject = Instantiate(linePrefab, clueCardContainer);
-        UILineRenderer line = lineObject.GetComponent<UILineRenderer>();
+        var lineObject = Instantiate(linePrefab, clueCardContainer);
+        var line = lineObject.GetComponent<UILineRenderer>();
 
         Vector2 start = GetAnchoredPosition(a.transform as RectTransform);
         Vector2 end = GetAnchoredPosition(b.transform as RectTransform);
 
         line.Points = new Vector2[] { start, end };
 
+        var newLink = new ClueLink(a, b, line);
+        existingLinks.Add(newLink);
         activeLines.Add(lineObject);
     }
 
     private Vector2 GetAnchoredPosition(RectTransform rect)
     {
         return rect.anchoredPosition;
+    }
+}
+
+[System.Serializable]
+public class ClueLink
+{
+    public DraggableClueCard a;
+    public DraggableClueCard b;
+    public UILineRenderer line;
+
+    public ClueLink(DraggableClueCard a, DraggableClueCard b, UILineRenderer line)
+    {
+        if (a.GetInstanceID() < b.GetInstanceID())
+        {
+            this.a = a;
+            this.b = b;
+        }
+        else
+        {
+            this.a = b;
+            this.b = a;
+        }
+
+        this.line = line;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not ClueLink other) return false;
+
+        return a == other.a && b == other.b;
+    }
+
+    public override int GetHashCode()
+    {
+        return a.GetHashCode() ^ b.GetHashCode();
     }
 }

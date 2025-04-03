@@ -41,6 +41,15 @@ public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler,
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        FindFirstObjectByType<ClueBoardManager>().HandleClueClicked(this);
+        var board = FindFirstObjectByType<ClueBoardManager>();
+
+        if(eventData.button == PointerEventData.InputButton.Right)
+        {
+            board.HandleClueRightClick(this);
+        }
+        else if(eventData.button == PointerEventData.InputButton.Left)
+        {
+            board.HandleClueClicked(this);
+        }
     }
 }
