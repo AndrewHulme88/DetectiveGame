@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
 using System.Linq;
+using TMPro;
+using System.Collections;
 
 public class ClueBoardManager : MonoBehaviour
 {
@@ -13,12 +15,16 @@ public class ClueBoardManager : MonoBehaviour
     [SerializeField] float clueCardSpacingHorizontal = 200f;
     [SerializeField] GameObject linePrefab;
     [SerializeField] List<Theory> validTheories = new();
+    [SerializeField] GameObject theoryPopup;
+    [SerializeField] TextMeshProUGUI popupText;
+    [SerializeField] float popupDuration = 2.5f;
 
     private NoteBookManager notebookManager;
     private bool boardOpen = false;
     private DraggableClueCard firstSelectedCard;
     private List<GameObject> activeLines = new();
     private HashSet<ClueLink> existingLinks = new();
+    private Coroutine popupRoutine;
 
     public bool IsBoardOpen => boardOpen;
 
@@ -183,13 +189,13 @@ public class ClueBoardManager : MonoBehaviour
             {
                 if(MatchTheory(theory, clueNames))
                 {
-                    Debug.Log($"Theory '{theory.theoryName}' is correct!");
+                    ShowPopup($"Theory '{theory.theoryName}' is correct!", Color.green);
                     return;
                 }
             }
         }
 
-        Debug.Log("No valid theory found in current connections.");
+        ShowPopup("No valid theory found.", Color.red);
     }
 
     private bool MatchTheory(Theory theory, List<string> linkedClues)
@@ -241,6 +247,26 @@ public class ClueBoardManager : MonoBehaviour
                 Traverse(link.a, group, visited);
             }
         }
+    }
+
+    private void ShowPopup(string message, Color color)
+    {
+        if(popupRoutine != null)
+        {
+            StopCoroutine(popupRoutine);
+        }
+
+        popupText.text = message;
+        popupText.color = color;
+        theoryPopup.SetActive(true);
+
+        popupRoutine = StartCoroutine(HidePopupAfterDelay());
+    }
+
+    private IEnumerator HidePopupAfterDelay()
+    {
+        yield return new WaitForSeconds(popupDuration);
+        theoryPopup.SetActive(false);
     }
 }
 
