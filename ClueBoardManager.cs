@@ -14,10 +14,12 @@ public class ClueBoardManager : MonoBehaviour
     [SerializeField] Transform clueCardContainer;
     [SerializeField] float clueCardSpacingHorizontal = 200f;
     [SerializeField] GameObject linePrefab;
-    [SerializeField] List<Theory> validTheories = new();
     [SerializeField] GameObject theoryPopup;
     [SerializeField] TextMeshProUGUI popupText;
     [SerializeField] float popupDuration = 2.5f;
+    [SerializeField] List<TheorySO> allTheories = new();
+
+    public List<TheorySO> AllTheories => allTheories;
 
     private NoteBookManager notebookManager;
     private bool boardOpen = false;
@@ -31,6 +33,12 @@ public class ClueBoardManager : MonoBehaviour
     private void Awake()
     {
         notebookManager = FindFirstObjectByType<NoteBookManager>();
+
+        foreach (var theory in allTheories)
+        {
+            theory.isSolved = false;
+            theory.isUnlocked = theory.startsUnlocked;
+        }
     }
 
     private void Update()
@@ -185,11 +193,66 @@ public class ClueBoardManager : MonoBehaviour
                 clueNames.Add(clue.ClueName);
             }
 
-            foreach(var theory in validTheories)
+            foreach (var theory in allTheories.Where(t => t.isUnlocked))
             {
+                if(theory.isSolved)
+                {
+                    continue;
+                }
+
                 if(MatchTheory(theory, clueNames))
                 {
+                    theory.isSolved = true;
                     ShowPopup($"Theory '{theory.theoryName}' is correct!", Color.green);
+                    notebookManager.AddSolvedTheory(theory);
+
+                    foreach(var clueCard in group)
+                    {
+                        Destroy(clueCard.gameObject);
+                    }
+
+                    foreach(var clueCard in group)
+                    {
+                        var clueName = clueCard.ClueName;
+                        var clueToRemove = notebookManager.CollectedClues.Find(c => c.clueName == clueName);
+                        
+                        if(clueToRemove != null)
+                        {
+                            notebookManager.RemoveClue(clueToRemove);
+                        }
+                    }
+
+                    existingLinks.RemoveWhere(link => group.Contains(link.a) || group.Contains(link.b));
+                    List<GameObject> toRemove = new();
+
+                    foreach(var lineObject in activeLines)
+                    {
+                        Destroy(lineObject);
+                        toRemove.Add(lineObject);
+                    }
+                    foreach(var line in toRemove)
+                    {
+                        activeLines.Remove(line);
+                    }
+
+                    Debug.Log($"Checking unlocks for theory: {theory.theoryName}, has {theory.unlocksWhenSolved.Count} to unlock.");
+
+                    foreach (var t in theory.unlocksWhenSolved)
+                    {
+                        if(!t.isUnlocked)
+                        {
+                            t.isUnlocked = true;
+                            Debug.Log($"Unlocked new theory: {t.theoryName}");
+                        }
+                    }
+
+                    foreach (var t in allTheories)
+                    {
+                        Debug.Log($"ALL THEORIES LIST: {t.theoryName}: isUnlocked = {t.isUnlocked}, isSolved = {t.isSolved}");
+                    }
+
+                    notebookManager.RefreshTheoryLists(allTheories);
+
                     return;
                 }
             }
@@ -198,10 +261,18 @@ public class ClueBoardManager : MonoBehaviour
         ShowPopup("No valid theory found.", Color.red);
     }
 
-    private bool MatchTheory(Theory theory, List<string> linkedClues)
+    private bool MatchTheory(TheorySO theory, List<string> linkedClues)
     {
-        return theory.requiredClues.All(linkedClues.Contains) &&
-            linkedClues.Count == theory.requiredClues.Count;
+        var required = theory.requiredClues;
+
+        if(linkedClues.Count != required.Count)
+        {
+            return false;
+        }
+
+        return required.All(req =>
+        linkedClues.Any(linked =>
+        linked.Equals(req, System.StringComparison.OrdinalIgnoreCase)));
     }
 
     private List<List<DraggableClueCard>> GetAllConnectedGroups()
