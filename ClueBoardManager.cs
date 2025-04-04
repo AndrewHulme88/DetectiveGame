@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
+using System.Linq;
 
 public class ClueBoardManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class ClueBoardManager : MonoBehaviour
     [SerializeField] Transform clueCardContainer;
     [SerializeField] float clueCardSpacingHorizontal = 200f;
     [SerializeField] GameObject linePrefab;
+    [SerializeField] List<Theory> validTheories = new();
 
     private NoteBookManager notebookManager;
     private bool boardOpen = false;
@@ -73,7 +75,8 @@ public class ClueBoardManager : MonoBehaviour
         for(int i = 0; i < clues.Count; i++)
         {
             GameObject card = Instantiate(clueCardPrefab, clueCardContainer);
-            card.GetComponent<DraggableClueCard>().Initialize(clues[i].clueName);
+            var clueCard = card.GetComponent<DraggableClueCard>();
+            clueCard.Initialize(clues[i]);
 
             RectTransform rect = card.GetComponent<RectTransform>();
             rect.anchoredPosition = new Vector2(startX + i * clueCardSpacingHorizontal, y);
@@ -161,6 +164,83 @@ public class ClueBoardManager : MonoBehaviour
     private Vector2 GetAnchoredPosition(RectTransform rect)
     {
         return rect.anchoredPosition;
+    }
+
+    public void SubmitTheory()
+    {
+        List<List<DraggableClueCard>> groups = GetAllConnectedGroups();
+
+        foreach(var group in groups)
+        {
+            List<string> clueNames = new();
+
+            foreach(var clue in group)
+            {
+                clueNames.Add(clue.ClueName);
+            }
+
+            foreach(var theory in validTheories)
+            {
+                if(MatchTheory(theory, clueNames))
+                {
+                    Debug.Log($"Theory '{theory.theoryName}' is correct!");
+                    return;
+                }
+            }
+        }
+
+        Debug.Log("No valid theory found in current connections.");
+    }
+
+    private bool MatchTheory(Theory theory, List<string> linkedClues)
+    {
+        return theory.requiredClues.All(linkedClues.Contains) &&
+            linkedClues.Count == theory.requiredClues.Count;
+    }
+
+    private List<List<DraggableClueCard>> GetAllConnectedGroups()
+    {
+        List<List<DraggableClueCard>> groups = new();
+        HashSet<DraggableClueCard> visited = new();
+
+        foreach(var link in existingLinks)
+        {
+            if(!visited.Contains(link.a))
+            {
+                List<DraggableClueCard> group = new();
+                Traverse(link.a, group, visited);
+                groups.Add(group);
+            }
+
+            if(!visited.Contains(link.b))
+            {
+                List<DraggableClueCard> group = new();
+                Traverse(link.b, group, visited);
+                groups.Add(group);
+            }
+        }
+
+        return groups;
+    }
+
+    private void Traverse(DraggableClueCard node, List<DraggableClueCard> group, HashSet<DraggableClueCard> visited)
+    {
+        if (visited.Contains(node)) return;
+
+        visited.Add(node);
+        group.Add(node);
+
+        foreach(var link in existingLinks)
+        {
+            if(link.a == node && !visited.Contains(link.b))
+            {
+                Traverse(link.b, group, visited);
+            }
+            else if(link.b == node && !visited.Contains(link.a))
+            {
+                Traverse(link.a, group, visited);
+            }
+        }
     }
 }
 

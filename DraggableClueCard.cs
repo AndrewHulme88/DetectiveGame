@@ -6,9 +6,12 @@ public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler,
 {
     [SerializeField] TextMeshProUGUI clueNameText;
 
+    public string ClueName => clueData.clueName;
+
     private CanvasGroup canvasGroup;
     private RectTransform rectTransform;
     private Transform originalParent;
+    private ClueData clueData;
 
     private void Awake()
     {
@@ -16,9 +19,10 @@ public class DraggableClueCard : MonoBehaviour, IBeginDragHandler, IDragHandler,
         canvasGroup = GetComponent<CanvasGroup>();
     }
 
-    public void Initialize(string clueName)
+    public void Initialize(ClueData data)
     {
-        clueNameText.text = clueName;
+        clueData = data;
+        clueNameText.text = clueData.clueName;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
