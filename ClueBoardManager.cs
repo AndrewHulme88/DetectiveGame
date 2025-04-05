@@ -95,6 +95,9 @@ public class ClueBoardManager : MonoBehaviour
             RectTransform rect = card.GetComponent<RectTransform>();
             rect.anchoredPosition = new Vector2(startX + i * clueCardSpacingHorizontal, y);
         }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)clueCardContainer);
     }
 
     public void HandleClueClicked(DraggableClueCard clicked)
@@ -162,15 +165,26 @@ public class ClueBoardManager : MonoBehaviour
 
     void CreateLink(DraggableClueCard a, DraggableClueCard b)
     {
+        var newLink = new ClueLink(a, b, null);
+
+        if(existingLinks.Contains(newLink))
+        {
+            Debug.Log("Link already exists between these clues");
+            return;
+        }
+
         var lineObject = Instantiate(linePrefab, clueCardContainer);
+        lineObject.transform.SetAsFirstSibling();
+
         var line = lineObject.GetComponent<UILineRenderer>();
+        line.raycastTarget = false;
 
         Vector2 start = GetAnchoredPosition(a.transform as RectTransform);
         Vector2 end = GetAnchoredPosition(b.transform as RectTransform);
 
         line.Points = new Vector2[] { start, end };
 
-        var newLink = new ClueLink(a, b, line);
+        newLink.line = line;
         existingLinks.Add(newLink);
         activeLines.Add(lineObject);
     }
@@ -203,6 +217,7 @@ public class ClueBoardManager : MonoBehaviour
                 if(MatchTheory(theory, clueNames))
                 {
                     theory.isSolved = true;
+                    theory.onSolved?.Invoke();
                     ShowPopup($"Theory '{theory.theoryName}' is correct!", Color.green);
                     notebookManager.AddSolvedTheory(theory);
 

@@ -14,6 +14,7 @@ public class NoteBookManager : MonoBehaviour
     [SerializeField] Transform unsolvedTheoryListParent;
     [SerializeField] Transform solvedTheoryListParent;
     [SerializeField] GameObject theoryEntryPrefab;
+    [SerializeField] TextMeshProUGUI theoryDescriptionText;
 
     private List<ClueData> collectedClues = new();
     private List<TheorySO> solvedTheories = new();
@@ -109,13 +110,19 @@ public class NoteBookManager : MonoBehaviour
 
             string label = theory.theoryName;
 
+            entry.GetComponentInChildren<TextMeshProUGUI>().text = label;
+
             if(!theory.isSolved)
             {
-                label += $"\n<size=75%><i>{theory.description}</i></size>";
+                Button button = entry.AddComponent<Button>();
+                button.onClick.AddListener(() => ShowTheoryDescription(theory));
             }
-
-            entry.GetComponentInChildren<TextMeshProUGUI>().text = label;
         }
+    }
+
+    private void ShowTheoryDescription(TheorySO theory)
+    {
+        theoryDescriptionText.text = theory.description;
     }
 
     public void RemoveClue(ClueData clue)
