@@ -15,6 +15,12 @@ public class NoteBookManager : MonoBehaviour
     [SerializeField] Transform solvedTheoryListParent;
     [SerializeField] GameObject theoryEntryPrefab;
     [SerializeField] TextMeshProUGUI theoryDescriptionText;
+    [SerializeField] Transform profileListParent;
+    [SerializeField] GameObject profileEntryPrefab;
+    [SerializeField] TextMeshProUGUI profileDescriptionText;
+    [SerializeField] GameObject cluesTab;
+    [SerializeField] GameObject theoriesTab;
+    [SerializeField] GameObject profilesTab;
 
     private List<ClueData> collectedClues = new();
     private List<TheorySO> solvedTheories = new();
@@ -39,6 +45,7 @@ public class NoteBookManager : MonoBehaviour
 
     private void Update()
     {
+        if (FindFirstObjectByType<DialogueManager>()?.IsDialogueOpen == true) return;
         if(Keyboard.current.tabKey.wasPressedThisFrame)
         {
             ToggleNoteBook();
@@ -58,6 +65,7 @@ public class NoteBookManager : MonoBehaviour
         if(notebookOpen)
         {
             RefreshTheoryLists(clueBoardManager.AllTheories);
+            
         }
 
         Cursor.lockState = notebookOpen ? CursorLockMode.None : CursorLockMode.Locked;
@@ -128,6 +136,37 @@ public class NoteBookManager : MonoBehaviour
     public void RemoveClue(ClueData clue)
     {
         collectedClues.Remove(clue);
+    }
+
+    public void RefreshProfiles(List<CharacterProfileSO> allProfiles)
+    {
+        foreach(Transform t in profileListParent)
+        {
+            Destroy(t.gameObject);
+        }
+
+        foreach(var profile in allProfiles)
+        {
+            if (!profile.isUnlocked) continue;
+
+            GameObject entry = Instantiate(profileEntryPrefab, profileListParent);
+            entry.GetComponentInChildren<TextMeshProUGUI>().text = profile.characterName;
+
+            Button button = entry.AddComponent<Button>();
+            button.onClick.AddListener(() => ShowProfileDescription(profile));
+        }
+    }
+
+    private void ShowProfileDescription(CharacterProfileSO profile)
+    {
+        profileDescriptionText.text = profile.description;
+    }
+
+    public void ShowNotebookTab(string tab)
+    {
+        cluesTab.SetActive(tab == "Clues");
+        theoriesTab.SetActive(tab == "Theories");
+        profilesTab.SetActive(tab == "Profiles");
     }
 }
 

@@ -43,7 +43,9 @@ public class ClueBoardManager : MonoBehaviour
 
     private void Update()
     {
-        if(Keyboard.current.mKey.wasPressedThisFrame)
+        if (FindFirstObjectByType<DialogueManager>()?.IsDialogueOpen == true) return;
+
+        if (Keyboard.current.mKey.wasPressedThisFrame)
         {
             ToggleBoard();
         }

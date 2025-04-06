@@ -2,7 +2,6 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine.InputSystem;
 using System.Collections;
 
@@ -52,6 +51,11 @@ public class DialogueManager : MonoBehaviour
 
         foreach(var option in dialogue.options)
         {
+            if(option.requiredTheory != null && !option.requiredTheory.isSolved)
+            {
+                continue;
+            }
+
             GameObject buttonObject = Instantiate(optionButtonPrefab, optionsContainer);
             TextMeshProUGUI buttonText = buttonObject.GetComponentInChildren<TextMeshProUGUI>();
             buttonText.text = option.playerChoice;
@@ -66,6 +70,8 @@ public class DialogueManager : MonoBehaviour
     {
         dialogueText.text = option.response;
         currentSelectedOption = option;
+
+        option.onSelected?.Invoke();
 
         foreach(Transform child in optionsContainer)
         {
