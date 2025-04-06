@@ -9,8 +9,9 @@ public class PlayerFPSController : MonoBehaviour
     [SerializeField] float moveSpeed = 3f;
     [SerializeField] Transform cameraTransform;
     [SerializeField] float mouseSensitivity = 2f;
-    [SerializeField] float interactRange = 2f;
+    [SerializeField] float interactRange = 1f;
     [SerializeField] LayerMask interactableLayer;
+    [SerializeField] GameObject interactionPrompt;
 
     private CharacterController controller;
     private PlayerInput playerInput;
@@ -62,6 +63,8 @@ public class PlayerFPSController : MonoBehaviour
 
     private void Update()
     {
+        CheckForInteractable();
+
         if (MenuOpen()) return;
 
         float mouseX = inputLook.x * mouseSensitivity;
@@ -95,10 +98,33 @@ public class PlayerFPSController : MonoBehaviour
     {
         NoteBookManager notebook = FindFirstObjectByType<NoteBookManager>();
         ClueBoardManager clueBoard = FindFirstObjectByType<ClueBoardManager>();
+        DialogueManager dialogue = FindFirstObjectByType<DialogueManager>();
 
         bool notebookOpen = notebook != null && notebook.IsNotebookOpen;
         bool clueBoardOpen = clueBoard != null && clueBoard.IsBoardOpen;
+        bool dialogueOpen = dialogue != null && dialogue.IsDialogueOpen;
 
-        return notebookOpen || clueBoardOpen;
+        return notebookOpen || clueBoardOpen || dialogueOpen;
+    }
+
+    private void CheckForInteractable()
+    {
+        if(MenuOpen())
+        {
+            interactionPrompt.SetActive(false);
+            return;
+        }
+
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+        if(Physics.Raycast(ray, out RaycastHit hit, interactRange, interactableLayer))
+        {
+            if(hit.collider.TryGetComponent<IInteractable>(out var _))
+            {
+                interactionPrompt.SetActive(true);
+                return;
+            }
+        }
+
+        interactionPrompt.SetActive(false);
     }
 }
