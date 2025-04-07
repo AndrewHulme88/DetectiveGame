@@ -13,4 +13,6 @@ public class CharacterProfileSO : ScriptableObject
     public bool startsUnlocked = false;
 
     [HideInInspector] public bool isUnlocked = false;
+
+    
 }

@@ -99,12 +99,14 @@ public class PlayerFPSController : MonoBehaviour
         NoteBookManager notebook = FindFirstObjectByType<NoteBookManager>();
         ClueBoardManager clueBoard = FindFirstObjectByType<ClueBoardManager>();
         DialogueManager dialogue = FindFirstObjectByType<DialogueManager>();
+        BodyInspector bodyInspector = FindFirstObjectByType<BodyInspector>();
 
         bool notebookOpen = notebook != null && notebook.IsNotebookOpen;
         bool clueBoardOpen = clueBoard != null && clueBoard.IsBoardOpen;
         bool dialogueOpen = dialogue != null && dialogue.IsDialogueOpen;
+        bool bodyInspectorOpen = bodyInspector != null && bodyInspector.IsInspectorOpen;
 
-        return notebookOpen || clueBoardOpen || dialogueOpen;
+        return notebookOpen || clueBoardOpen || dialogueOpen || bodyInspectorOpen;
     }
 
     private void CheckForInteractable()

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.EventSystems;
+using System.Collections;
 
 public class NoteBookManager : MonoBehaviour
 {
@@ -23,6 +24,9 @@ public class NoteBookManager : MonoBehaviour
     [SerializeField] GameObject theoriesTab;
     [SerializeField] GameObject profilesTab;
     [SerializeField] List<CharacterProfileSO> allProfiles = new();
+    [SerializeField] GameObject profilePopupUI;
+    [SerializeField] TextMeshProUGUI profilePopupText;
+    [SerializeField] float popuDuration = 2.5f;
 
     private List<ClueData> collectedClues = new();
     private List<TheorySO> solvedTheories = new();
@@ -33,6 +37,7 @@ public class NoteBookManager : MonoBehaviour
 
     private bool notebookOpen = false;
     private ClueBoardManager clueBoardManager;
+    private Coroutine popupRoutine;
 
     public bool IsNotebookOpen => notebookOpen;
 
@@ -45,8 +50,7 @@ public class NoteBookManager : MonoBehaviour
     {
         foreach (var profile in allProfiles)
         {
-            if (profile.startsUnlocked)
-                profile.isUnlocked = true;
+            profile.isUnlocked = profile.startsUnlocked;
         }
 
         RefreshTheoryLists(clueBoardManager.AllTheories);
@@ -55,7 +59,9 @@ public class NoteBookManager : MonoBehaviour
     private void Update()
     {
         if (FindFirstObjectByType<DialogueManager>()?.IsDialogueOpen == true) return;
-        if(Keyboard.current.tabKey.wasPressedThisFrame)
+        if (FindFirstObjectByType<BodyInspector>()?.IsInspectorOpen == true) return;
+
+        if (Keyboard.current.tabKey.wasPressedThisFrame)
         {
             ToggleNoteBook();
         }
@@ -167,6 +173,16 @@ public class NoteBookManager : MonoBehaviour
         collectedClues.Remove(clue);
     }
 
+    public void UnlockProfile(CharacterProfileSO profile)
+    {
+        if (!profile.isUnlocked)
+        {
+            profile.isUnlocked = true;
+            RefreshProfiles();
+            ShowProfilePopup(profile.characterName);
+        }
+    }
+
     public void RefreshProfiles()
     {
         foreach(Transform t in profileListParent)
@@ -190,6 +206,24 @@ public class NoteBookManager : MonoBehaviour
     {
         profileDescriptionText.text = profile.description;
         profilePortraitImage.sprite = profile.portrait;
+    }
+
+    public void ShowProfilePopup(string profileName)
+    {
+        if(popupRoutine != null)
+        {
+            StopCoroutine(popupRoutine);
+        }
+
+        profilePopupText.text = $"New Profile Unlocked: {profileName}";
+        profilePopupUI.SetActive(true);
+        popupRoutine = StartCoroutine(HideProfileAfterDelay());
+    }
+
+    private IEnumerator HideProfileAfterDelay()
+    {
+        yield return new WaitForSeconds(popuDuration);
+        profilePopupUI.SetActive(false);
     }
 
     public void ShowNotebookTab(string tab)

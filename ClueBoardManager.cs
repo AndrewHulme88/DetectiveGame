@@ -44,6 +44,7 @@ public class ClueBoardManager : MonoBehaviour
     private void Update()
     {
         if (FindFirstObjectByType<DialogueManager>()?.IsDialogueOpen == true) return;
+        if (FindFirstObjectByType<BodyInspector>()?.IsInspectorOpen == true) return;
 
         if (Keyboard.current.mKey.wasPressedThisFrame)
         {
