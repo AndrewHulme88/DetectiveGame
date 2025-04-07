@@ -18,15 +18,18 @@ public class NoteBookManager : MonoBehaviour
     [SerializeField] Transform profileListParent;
     [SerializeField] GameObject profileEntryPrefab;
     [SerializeField] TextMeshProUGUI profileDescriptionText;
+    [SerializeField] Image profilePortraitImage;
     [SerializeField] GameObject cluesTab;
     [SerializeField] GameObject theoriesTab;
     [SerializeField] GameObject profilesTab;
+    [SerializeField] List<CharacterProfileSO> allProfiles = new();
 
     private List<ClueData> collectedClues = new();
     private List<TheorySO> solvedTheories = new();
 
     public List<ClueData> CollectedClues => collectedClues;
     public List<TheorySO> SolvedTheories => solvedTheories;
+    public List<CharacterProfileSO> AllProfiles => allProfiles;
 
     private bool notebookOpen = false;
     private ClueBoardManager clueBoardManager;
@@ -40,6 +43,12 @@ public class NoteBookManager : MonoBehaviour
 
     private void Start()
     {
+        foreach (var profile in allProfiles)
+        {
+            if (profile.startsUnlocked)
+                profile.isUnlocked = true;
+        }
+
         RefreshTheoryLists(clueBoardManager.AllTheories);
     }
 
@@ -64,8 +73,11 @@ public class NoteBookManager : MonoBehaviour
 
         if(notebookOpen)
         {
+            ShowNotebookTab("Clues");
+
+            RefreshClueList();
             RefreshTheoryLists(clueBoardManager.AllTheories);
-            
+            RefreshProfiles();
         }
 
         Cursor.lockState = notebookOpen ? CursorLockMode.None : CursorLockMode.Locked;
@@ -85,6 +97,23 @@ public class NoteBookManager : MonoBehaviour
     private void ShowClueDescription(ClueData clue)
     {
         clueDescriptionText.text = clue.description;
+    }
+
+    public void RefreshClueList()
+    {
+        foreach(Transform t in clueListParent)
+        {
+            Destroy(t.gameObject);
+        }
+
+        foreach(var clue in collectedClues)
+        {
+            GameObject entry = Instantiate(clueEntryPrefab, clueListParent);
+            entry.GetComponentInChildren<TextMeshProUGUI>().text = clue.clueName;
+
+            Button button = entry.AddComponent<Button>();
+            button.onClick.AddListener(() => ShowClueDescription(clue));
+        }
     }
 
     public void AddSolvedTheory(TheorySO theory)
@@ -138,14 +167,14 @@ public class NoteBookManager : MonoBehaviour
         collectedClues.Remove(clue);
     }
 
-    public void RefreshProfiles(List<CharacterProfileSO> allProfiles)
+    public void RefreshProfiles()
     {
         foreach(Transform t in profileListParent)
         {
             Destroy(t.gameObject);
         }
 
-        foreach(var profile in allProfiles)
+        foreach(var profile in this.allProfiles)
         {
             if (!profile.isUnlocked) continue;
 
@@ -160,6 +189,7 @@ public class NoteBookManager : MonoBehaviour
     private void ShowProfileDescription(CharacterProfileSO profile)
     {
         profileDescriptionText.text = profile.description;
+        profilePortraitImage.sprite = profile.portrait;
     }
 
     public void ShowNotebookTab(string tab)
